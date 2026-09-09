@@ -1,0 +1,193 @@
+name: grc-gate
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  id-token: write       # required for AWS OIDC (Floci) + Cosign keyless (Sigstore)
+  contents: read
+  pull-requests: write  # required to comment on the PR
+env:
+  AWS_REGION: us-east-1
+  AWS_ENDPOINT_URL: http://localhost:4566
+  TF_WORKING_DIR: terraform/primitives/compliant-s3
+jobs:
+  grc-gate:
+    runs-on: ubuntu-latest
+    services:
+      floci:
+        image: floci/floci:latest
+        ports:
+          - 4566:4566
+        options: >-
+          -v /var/run/docker.sock:/var/run/docker.sock
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for Floci to be ready
+        run: |
+          for i in {1..30}; do
+            curl -sf http://localhost:4566/_localstack/health && break
+            sleep 1
+          done
+      - name: Configure AWS credentials (OIDC, via Floci STS)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+        env:
+          AWS_ENDPOINT_URL: http://localhost:4566
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+          terraform_wrapper: false
+      - name: Install Conftest
+        run: |
+          curl -fsSL https://github.com/open-policy-agent/conftest/releases/download/v0.50.0/conftest_0.50.0_Linux_x86_64.tar.gz \
+            | tar -xz -C /usr/local/bin conftest
+      - name: Install tfsec
+        run: |
+          curl -fsSL https://github.com/aquasecurity/tfsec/releases/download/v1.28.14/tfsec-linux-amd64 \
+            -o /usr/local/bin/tfsec && chmod +x /usr/local/bin/tfsec
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+      - name: Terraform plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform init -input=false
+          terraform validate
+          terraform plan -out=tfplan -input=false -no-color \
+            -var="project_name=cgep-lab" -var="environment=dev" | tee plan.txt
+          terraform show -json tfplan > plan.json
+      - name: Conftest policy gate
+        id: conftest
+        run: |
+          mkdir -p evidence/lab-4-3
+          EXIT=0
+          {
+            echo "["
+            FIRST=1
+            for ns in compliance.sc28_aws compliance.ac3_aws compliance.cm6_aws ; do
+              [[ $FIRST -eq 1 ]] && FIRST=0 || printf ","
+              set +e
+              OUT=$(conftest test --policy policies --namespace "$ns" --output=json "$TF_WORKING_DIR/plan.json")
+              STATUS=$?
+              set -e
+              [[ $STATUS -eq 0 ]] || EXIT=1
+              printf '%s' "$OUT"
+            done
+            echo
+            echo "]"
+          } > evidence/lab-4-3/conftest-results.json
+          if [[ $EXIT -eq 0 ]]; then echo "conftest: PASS"; else echo "conftest: FAIL"; exit 1; fi
+      - name: tfsec scan
+        id: tfsec
+        if: always()
+        run: |
+          tfsec "$TF_WORKING_DIR" --format sarif --out evidence/lab-4-3/tfsec.sarif || true
+          tfsec "$TF_WORKING_DIR" --minimum-severity HIGH
+      - name: Copy plan into evidence
+        if: always()
+        run: |
+          cp "$TF_WORKING_DIR"/plan.json evidence/lab-4-3/plan.json
+          cp "$TF_WORKING_DIR"/plan.txt  evidence/lab-4-3/plan.txt
+      - name: Ensure evidence vault bucket exists
+        env:
+          VAULT: ${{ vars.EVIDENCE_VAULT }}
+        run: |
+          set -euo pipefail
+          aws s3api head-bucket --bucket "${VAULT}" 2>/dev/null \
+            || aws s3api create-bucket --bucket "${VAULT}" --region us-east-1
+      - name: Bundle + sign + upload to vault
+        id: sign
+        if: always()
+        env:
+          VAULT: ${{ vars.EVIDENCE_VAULT }}
+          RUN_ID: ${{ github.run_id }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if command -v sha256sum >/dev/null 2>&1; then SHASUM="sha256sum"
+          elif command -v shasum >/dev/null 2>&1; then SHASUM="shasum -a 256"
+          else echo "Need sha256sum or shasum" >&2; exit 2; fi
+
+          BUNDLE="evidence-${RUN_ID}-${SHA}.tar.gz"
+          ( cd evidence/lab-4-3 && tar czf "../../${BUNDLE}" . )
+          $SHASUM "${BUNDLE}" | awk '{print $1}' > "${BUNDLE}.sha256"
+
+          cosign sign-blob --yes --bundle "${BUNDLE}.sig.bundle" "${BUNDLE}"
+
+          KEY_PREFIX="runs/${RUN_ID}"
+          aws s3 cp "${BUNDLE}"            "s3://${VAULT}/${KEY_PREFIX}/${BUNDLE}"
+          aws s3 cp "${BUNDLE}.sha256"     "s3://${VAULT}/${KEY_PREFIX}/${BUNDLE}.sha256"
+          aws s3 cp "${BUNDLE}.sig.bundle" "s3://${VAULT}/${KEY_PREFIX}/${BUNDLE}.sig.bundle"
+
+          VERSION_ID=$(aws s3api head-object --bucket "${VAULT}" --key "${KEY_PREFIX}/${BUNDLE}" --query VersionId --output text)
+          cat > receipt.json <<EOF
+          {
+            "run_id":"${RUN_ID}",
+            "vault":"${VAULT}",
+            "bundle_key":"${KEY_PREFIX}/${BUNDLE}",
+            "version_id":"${VERSION_ID}",
+            "sha256":"$(cat ${BUNDLE}.sha256)",
+            "commit":"${SHA}"
+          }
+          EOF
+          aws s3 cp receipt.json "s3://${VAULT}/${KEY_PREFIX}/receipt.json"
+          mkdir -p evidence/lab-4-4
+          cp receipt.json evidence/lab-4-4/receipt.json
+      - name: Verify evidence chain
+        id: verify
+        if: steps.sign.outcome == 'success'
+        run: |
+          bash scripts/verify-evidence.sh "${{ github.run_id }}" --vault "${{ vars.EVIDENCE_VAULT }}"
+      - name: Upload evidence artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: grc-evidence-${{ github.run_id }}
+          path: |
+            evidence/lab-4-3/
+            evidence/lab-4-4/
+          retention-days: 90
+      - name: Enforce gate
+        if: always()
+        env:
+          VAULT: ${{ vars.EVIDENCE_VAULT }}
+        run: |
+          test "${{ steps.conftest.outcome }}" = "success" \
+            && test "${{ steps.tfsec.outcome }}" = "success" \
+            && test "${{ steps.verify.outcome }}" = "success" \
+            || exit 1
+
+          export AWS_ACCESS_KEY_ID=testgrc
+          export AWS_SECRET_ACCESS_KEY=testgrc1
+          export AWS_DEFAULT_REGION=us-east-1
+          export AWS_ENDPOINT_URL=http://localhost:4566
+
+          aws iam get-role --role-name cgep-grc-gate >/dev/null 2>&1 || \
+          aws iam create-role \
+            --role-name cgep-grc-gate \
+            --assume-role-policy-document '{
+              "Version": "2012-10-17",
+              "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": "ec2.amazonaws.com" },
+                "Action": "sts:AssumeRole"
+              }]
+            }'
+
+          aws iam put-role-policy \
+            --role-name cgep-grc-gate \
+            --policy-name vault-write \
+            --policy-document "$(cat <<EOF
+          {
+            "Version":"2012-10-17",
+            "Statement":[{
+              "Effect":"Allow",
+              "Action":["s3:PutObject","s3:GetObject","s3:GetBucketLocation"],
+              "Resource":["arn:aws:s3:::${VAULT}","arn:aws:s3:::${VAULT}/*"]
+            }]
+          }
+          EOF
+          )"

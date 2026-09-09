@@ -1,0 +1,103 @@
+{
+  "component-definition": {
+    "uuid": "02fde8dd-b356-4176-9342-c2eb4818381a",
+    "metadata": {
+      "title": "compliant-s3 module v1",
+      "last-modified": "2026-04-26T18:00:00.000000+00:00",
+      "version": "1.0.0",
+      "oscal-version": "1.2.1",
+      "parties": [
+        {
+          "uuid": "0e8daf12-74c7-47a3-bc61-8e6ab637309f",
+          "type": "organization",
+          "name": "Your organization"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "838a12b3-a316-4f0b-91d7-a62e48cfd584",
+        "type": "software",
+        "title": "compliant-s3",
+        "description": "Reusable Terraform pattern for an AWS S3 primary bucket plus a dedicated access-log bucket. Hardcodes server-side encryption, versioning, public access block, access logging, and required compliance tags.",
+        "purpose": "Provide a compliant-by-default S3 primitive that any team can adopt with three lines of consumer Terraform.",
+        "responsible-roles": [
+          { "role-id": "provider", "party-uuids": ["0e8daf12-74c7-47a3-bc61-8e6ab637309f"] }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "c77c12b2-bb42-4226-be5f-14fc96d1e23e",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "Implementation of NIST 800-53 Rev 5 controls satisfied by this module.",
+            "implemented-requirements": [
+              {
+                "uuid": "465aaa9c-7687-4573-b7ac-54480b0e06e5",
+                "control-id": "sc-28",
+                "description": "Server-side encryption is enforced via aws_s3_bucket_server_side_encryption_configuration.primary, using SSE-KMS with a dedicated customer-managed KMS key (aws_kms_key.s3). Hardcoded; consumers cannot override.",
+                "props": [
+                  { "name": "implementation-status", "value": "implemented" },
+                  { "name": "terraform-resource", "value": "aws_s3_bucket_server_side_encryption_configuration.primary" }
+                ],
+                "links": [
+                  {
+                    "rel": "evidence",
+                    "href": "s3://cgep-lab-grc-evidence-vault-e53e936e/runs/33811511395/evidence-33811511395-7095d18037b3416df045802ce72e58f1bfccbd08.tar.gz",
+                    "text": "Signed pipeline bundle containing terraform plan.json."
+                  }
+                ]
+              },
+              {
+                "uuid": "77c84277-7f19-486d-9471-a8d4269a14f1",
+                "control-id": "ac-3",
+                "description": "Public access to the bucket is blocked at the account/bucket level via aws_s3_bucket_public_access_block. Hardcoded; consumers cannot override.",
+                "props": [
+                  { "name": "implementation-status", "value": "implemented" },
+                  { "name": "terraform-resource", "value": "aws_s3_bucket_public_access_block.primary" }
+                ],
+                "links": [
+                  {
+                    "rel": "evidence",
+                    "href": "s3://cgep-lab-grc-evidence-vault-e53e936e/runs/33811511395/evidence-33811511395-7095d18037b3416df045802ce72e58f1bfccbd08.tar.gz",
+                    "text": "Signed pipeline bundle containing terraform plan.json."
+                  }
+                ]
+              },
+              {
+                "uuid": "f6f7bf2e-9a82-46e2-8ea7-2f248267ad9f",
+                "control-id": "au-3",
+                "description": "Access logging is enforced via aws_s3_bucket_logging, writing to a dedicated access-log bucket so every request against the primary bucket is recorded.",
+                "props": [
+                  { "name": "implementation-status", "value": "implemented" },
+                  { "name": "terraform-resource", "value": "aws_s3_bucket_logging.primary" }
+                ],
+                "links": [
+                  {
+                    "rel": "evidence",
+                    "href": "s3://cgep-lab-grc-evidence-vault-e53e936e/runs/33811511395/evidence-33811511395-7095d18037b3416df045802ce72e58f1bfccbd08.tar.gz",
+                    "text": "Signed pipeline bundle containing terraform plan.json."
+                  }
+                ]
+              },
+              {
+                "uuid": "ee4cb1f3-6631-49b7-82e3-82a8bda35e19",
+                "control-id": "cm-6",
+                "description": "Bucket versioning is enforced via aws_s3_bucket_versioning, locking in a baseline configuration setting that consumers cannot disable.",
+                "props": [
+                  { "name": "implementation-status", "value": "implemented" },
+                  { "name": "terraform-resource", "value": "aws_s3_bucket_versioning.primary" }
+                ],
+                "links": [
+                  {
+                    "rel": "evidence",
+                    "href": "s3://cgep-lab-grc-evidence-vault-e53e936e/runs/33811511395/evidence-33811511395-7095d18037b3416df045802ce72e58f1bfccbd08.tar.gz",
+                    "text": "Signed pipeline bundle containing terraform plan.json."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

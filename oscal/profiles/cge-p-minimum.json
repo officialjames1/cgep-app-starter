@@ -1,0 +1,20 @@
+{
+  "profile": {
+    "uuid": "489c610d-2326-4d7e-9e55-5ff68a565b19",
+    "metadata": {
+      "title": "CGE-P minimum control selection",
+      "last-modified": "2026-04-26T18:00:00.000000+00:00",
+      "version": "1.0.0",
+      "oscal-version": "1.2.1"
+    },
+    "imports": [
+      {
+        "href": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+        "include-controls": [
+          { "with-ids": ["sc-28", "ac-3", "au-3", "cm-6"] }
+        ]
+      }
+    ],
+    "merge": { "as-is": true }
+  }
+}

@@ -1,0 +1,608 @@
+[0m[1mrandom_id.suffix: Refreshing state... [id=Q_yyAA][0m
+[0m[1mdata.archive_file.handler: Reading...[0m[0m
+[0m[1mdata.archive_file.handler: Read complete after 0s [id=7cdd0906eaeecc3e2cfb2eeaf3b975604667e9a8][0m
+[0m[1maws_vpc.main: Refreshing state... [id=vpc-0d17a6509ee5b5a58][0m
+[0m[1mdata.aws_caller_identity.current: Reading...[0m[0m
+[0m[1mdata.aws_availability_zones.available: Reading...[0m[0m
+[0m[1maws_iam_role.lambda: Refreshing state... [id=acme-health-intake-lambda-43fcb200][0m
+[0m[1maws_s3_bucket.uploads: Refreshing state... [id=acme-health-intake-uploads-43fcb200][0m
+[0m[1maws_dynamodb_table.intake: Refreshing state... [id=acme-health-intake-submissions-43fcb200][0m
+[0m[1maws_apigatewayv2_api.intake: Refreshing state... [id=yql36n77mh][0m
+[0m[1mdata.aws_caller_identity.current: Read complete after 0s [id=187478111793][0m
+[0m[1mdata.aws_availability_zones.available: Read complete after 0s [id=us-east-1][0m
+[0m[1maws_apigatewayv2_stage.default: Refreshing state... [id=$default][0m
+[0m[1maws_iam_role_policy_attachment.lambda_basic: Refreshing state... [id=acme-health-intake-lambda-43fcb200-20260908222019265000000001][0m
+[0m[1maws_iam_role_policy.lambda_inline: Refreshing state... [id=acme-health-intake-lambda-43fcb200:intake-data-access][0m
+[0m[1maws_lambda_function.intake: Refreshing state... [id=acme-health-intake-handler-43fcb200][0m
+[0m[1maws_internet_gateway.main: Refreshing state... [id=igw-000602fc39cd4a21f][0m
+[0m[1maws_subnet.public[1]: Refreshing state... [id=subnet-028fdcf30050656e8][0m
+[0m[1maws_subnet.private[1]: Refreshing state... [id=subnet-09fa7944832526641][0m
+[0m[1maws_subnet.private[0]: Refreshing state... [id=subnet-018345f7e57c4f962][0m
+[0m[1maws_subnet.public[0]: Refreshing state... [id=subnet-02bf9bd62d48f345c][0m
+[0m[1maws_route_table.public: Refreshing state... [id=rtb-0197a7e820a4937c9][0m
+[0m[1maws_lambda_permission.apigw: Refreshing state... [id=AllowAPIGatewayInvoke][0m
+[0m[1maws_apigatewayv2_integration.lambda: Refreshing state... [id=amvd6kb][0m
+[0m[1maws_route_table_association.public[1]: Refreshing state... [id=rtbassoc-0c9db7f98ee18acaf][0m
+[0m[1maws_route_table_association.public[0]: Refreshing state... [id=rtbassoc-0328face653de1ff6][0m
+[0m[1maws_apigatewayv2_route.intake: Refreshing state... [id=ma8vubl][0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+ [36m<=[0m read (data resources)[0m
+
+Terraform will perform the following actions:
+
+[1m  # data.aws_iam_policy_document.trail[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "aws_iam_policy_document" "trail" {
+      [32m+[0m[0m id            = (known after apply)
+      [32m+[0m[0m json          = (known after apply)
+      [32m+[0m[0m minified_json = (known after apply)
+
+      [32m+[0m[0m statement {
+          [32m+[0m[0m actions   = [
+              [32m+[0m[0m "s3:GetBucketAcl",
+            ]
+          [32m+[0m[0m effect    = "Allow"
+          [32m+[0m[0m resources = [
+              [32m+[0m[0m (known after apply),
+            ]
+          [32m+[0m[0m sid       = "AWSCloudTrailAclCheck"
+
+          [32m+[0m[0m condition {
+              [32m+[0m[0m test     = "StringEquals"
+              [32m+[0m[0m values   = [
+                  [32m+[0m[0m "arn:aws:cloudtrail:us-east-1:187478111793:trail/cgep-lab-mgmt",
+                ]
+              [32m+[0m[0m variable = "aws:SourceArn"
+            }
+
+          [32m+[0m[0m principals {
+              [32m+[0m[0m identifiers = [
+                  [32m+[0m[0m "cloudtrail.amazonaws.com",
+                ]
+              [32m+[0m[0m type        = "Service"
+            }
+        }
+      [32m+[0m[0m statement {
+          [32m+[0m[0m actions   = [
+              [32m+[0m[0m "s3:PutObject",
+            ]
+          [32m+[0m[0m effect    = "Allow"
+          [32m+[0m[0m resources = [
+              [32m+[0m[0m (known after apply),
+            ]
+          [32m+[0m[0m sid       = "AWSCloudTrailWrite"
+
+          [32m+[0m[0m condition {
+              [32m+[0m[0m test     = "StringEquals"
+              [32m+[0m[0m values   = [
+                  [32m+[0m[0m "arn:aws:cloudtrail:us-east-1:187478111793:trail/cgep-lab-mgmt",
+                ]
+              [32m+[0m[0m variable = "aws:SourceArn"
+            }
+          [32m+[0m[0m condition {
+              [32m+[0m[0m test     = "StringEquals"
+              [32m+[0m[0m values   = [
+                  [32m+[0m[0m "bucket-owner-full-control",
+                ]
+              [32m+[0m[0m variable = "s3:x-amz-acl"
+            }
+
+          [32m+[0m[0m principals {
+              [32m+[0m[0m identifiers = [
+                  [32m+[0m[0m "cloudtrail.amazonaws.com",
+                ]
+              [32m+[0m[0m type        = "Service"
+            }
+        }
+    }
+
+[1m  # aws_cloudtrail.mgmt[0m will be created
+[0m  [32m+[0m[0m resource "aws_cloudtrail" "mgmt" {
+      [32m+[0m[0m arn                           = (known after apply)
+      [32m+[0m[0m enable_log_file_validation    = true
+      [32m+[0m[0m enable_logging                = true
+      [32m+[0m[0m home_region                   = (known after apply)
+      [32m+[0m[0m id                            = (known after apply)
+      [32m+[0m[0m include_global_service_events = true
+      [32m+[0m[0m is_multi_region_trail         = true
+      [32m+[0m[0m is_organization_trail         = false
+      [32m+[0m[0m name                          = "cgep-lab-mgmt"
+      [32m+[0m[0m s3_bucket_name                = (known after apply)
+      [32m+[0m[0m sns_topic_arn                 = (known after apply)
+      [32m+[0m[0m tags_all                      = {
+          [32m+[0m[0m "DataClass" = "phi"
+          [32m+[0m[0m "ManagedBy" = "terraform"
+          [32m+[0m[0m "Project"   = "acme-health-intake"
+          [32m+[0m[0m "Workload"  = "patient-intake-api"
+        }
+    }
+
+[1m  # aws_iam_openid_connect_provider.github[0m will be created
+[0m  [32m+[0m[0m resource "aws_iam_openid_connect_provider" "github" {
+      [32m+[0m[0m arn             = (known after apply)
+      [32m+[0m[0m client_id_list  = [
+          [32m+[0m[0m "sts.amazonaws.com",
+        ]
+      [32m+[0m[0m id              = (known after apply)
+      [32m+[0m[0m tags_all        = {
+          [32m+[0m[0m "DataClass" = "phi"
+          [32m+[0m[0m "ManagedBy" = "terraform"
+          [32m+[0m[0m "Project"   = "acme-health-intake"
+          [32m+[0m[0m "Workload"  = "patient-intake-api"
+        }
+      [32m+[0m[0m thumbprint_list = [
+          [32m+[0m[0m "6938fd4d98bab03faadb97b34396831e3780aea1",
+        ]
+      [32m+[0m[0m url             = "https://token.actions.githubusercontent.com"
+    }
+
+[1m  # aws_iam_role.grc_gate[0m will be created
+[0m  [32m+[0m[0m resource "aws_iam_role" "grc_gate" {
+      [32m+[0m[0m arn                   = (known after apply)
+      [32m+[0m[0m assume_role_policy    = (known after apply)
+      [32m+[0m[0m create_date           = (known after apply)
+      [32m+[0m[0m force_detach_policies = false
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m managed_policy_arns   = (known after apply)
+      [32m+[0m[0m max_session_duration  = 3600
+      [32m+[0m[0m name                  = "cgep-grc-gate"
+      [32m+[0m[0m name_prefix           = (known after apply)
+      [32m+[0m[0m path                  = "/"
+      [32m+[0m[0m tags_all              = {
+          [32m+[0m[0m "DataClass" = "phi"
+          [32m+[0m[0m "ManagedBy" = "terraform"
+          [32m+[0m[0m "Project"   = "acme-health-intake"
+          [32m+[0m[0m "Workload"  = "patient-intake-api"
+        }
+      [32m+[0m[0m unique_id             = (known after apply)
+
+      [32m+[0m[0m inline_policy (known after apply)
+    }
+
+[1m  # aws_iam_role_policy_attachment.readonly[0m will be created
+[0m  [32m+[0m[0m resource "aws_iam_role_policy_attachment" "readonly" {
+      [32m+[0m[0m id         = (known after apply)
+      [32m+[0m[0m policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+      [32m+[0m[0m role       = "cgep-grc-gate"
+    }
+
+[1m  # aws_kms_alias.s3[0m will be created
+[0m  [32m+[0m[0m resource "aws_kms_alias" "s3" {
+      [32m+[0m[0m arn            = (known after apply)
+      [32m+[0m[0m id             = (known after apply)
+      [32m+[0m[0m name           = "alias/acme-health-dev-s3"
+      [32m+[0m[0m name_prefix    = (known after apply)
+      [32m+[0m[0m target_key_arn = (known after apply)
+      [32m+[0m[0m target_key_id  = (known after apply)
+    }
+
+[1m  # aws_kms_key.s3[0m will be created
+[0m  [32m+[0m[0m resource "aws_kms_key" "s3" {
+      [32m+[0m[0m arn                                = (known after apply)
+      [32m+[0m[0m bypass_policy_lockout_safety_check = false
+      [32m+[0m[0m customer_master_key_spec           = "SYMMETRIC_DEFAULT"
+      [32m+[0m[0m deletion_window_in_days            = 7
+      [32m+[0m[0m description                        = "CMK for acme-health-dev S3 encryption at rest"
+      [32m+[0m[0m enable_key_rotation                = true
+      [32m+[0m[0m id                                 = (known after apply)
+      [32m+[0m[0m is_enabled                         = true
+      [32m+[0m[0m key_id                             = (known after apply)
+      [32m+[0m[0m key_usage                          = "ENCRYPT_DECRYPT"
+      [32m+[0m[0m multi_region                       = (known after apply)
+      [32m+[0m[0m policy                             = (known after apply)
+      [32m+[0m[0m rotation_period_in_days            = (known after apply)
+      [32m+[0m[0m tags_all                           = {
+          [32m+[0m[0m "DataClass" = "phi"
+          [32m+[0m[0m "ManagedBy" = "terraform"
+          [32m+[0m[0m "Project"   = "acme-health-intake"
+          [32m+[0m[0m "Workload"  = "patient-intake-api"
+        }
+    }
+
+[1m  # aws_s3_bucket.log[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket" "log" {
+      [32m+[0m[0m acceleration_status         = (known after apply)
+      [32m+[0m[0m acl                         = (known after apply)
+      [32m+[0m[0m arn                         = (known after apply)
+      [32m+[0m[0m bucket                      = (known after apply)
+      [32m+[0m[0m bucket_domain_name          = (known after apply)
+      [32m+[0m[0m bucket_prefix               = (known after apply)
+      [32m+[0m[0m bucket_regional_domain_name = (known after apply)
+      [32m+[0m[0m force_destroy               = false
+      [32m+[0m[0m hosted_zone_id              = (known after apply)
+      [32m+[0m[0m id                          = (known after apply)
+      [32m+[0m[0m object_lock_enabled         = (known after apply)
+      [32m+[0m[0m policy                      = (known after apply)
+      [32m+[0m[0m region                      = (known after apply)
+      [32m+[0m[0m request_payer               = (known after apply)
+      [32m+[0m[0m tags_all                    = {
+          [32m+[0m[0m "DataClass" = "phi"
+          [32m+[0m[0m "ManagedBy" = "terraform"
+          [32m+[0m[0m "Project"   = "acme-health-intake"
+          [32m+[0m[0m "Workload"  = "patient-intake-api"
+        }
+      [32m+[0m[0m website_domain              = (known after apply)
+      [32m+[0m[0m website_endpoint            = (known after apply)
+
+      [32m+[0m[0m cors_rule (known after apply)
+
+      [32m+[0m[0m grant (known after apply)
+
+      [32m+[0m[0m lifecycle_rule (known after apply)
+
+      [32m+[0m[0m logging (known after apply)
+
+      [32m+[0m[0m object_lock_configuration (known after apply)
+
+      [32m+[0m[0m replication_configuration (known after apply)
+
+      [32m+[0m[0m server_side_encryption_configuration (known after apply)
+
+      [32m+[0m[0m versioning (known after apply)
+
+      [32m+[0m[0m website (known after apply)
+    }
+
+[1m  # aws_s3_bucket.primary[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket" "primary" {
+      [32m+[0m[0m acceleration_status         = (known after apply)
+      [32m+[0m[0m acl                         = (known after apply)
+      [32m+[0m[0m arn                         = (known after apply)
+      [32m+[0m[0m bucket                      = (known after apply)
+      [32m+[0m[0m bucket_domain_name          = (known after apply)
+      [32m+[0m[0m bucket_prefix               = (known after apply)
+      [32m+[0m[0m bucket_regional_domain_name = (known after apply)
+      [32m+[0m[0m force_destroy               = false
+      [32m+[0m[0m hosted_zone_id              = (known after apply)
+      [32m+[0m[0m id                          = (known after apply)
+      [32m+[0m[0m object_lock_enabled         = (known after apply)
+      [32m+[0m[0m policy                      = (known after apply)
+      [32m+[0m[0m region                      = (known after apply)
+      [32m+[0m[0m request_payer               = (known after apply)
+      [32m+[0m[0m tags_all                    = {
+          [32m+[0m[0m "DataClass" = "phi"
+          [32m+[0m[0m "ManagedBy" = "terraform"
+          [32m+[0m[0m "Project"   = "acme-health-intake"
+          [32m+[0m[0m "Workload"  = "patient-intake-api"
+        }
+      [32m+[0m[0m website_domain              = (known after apply)
+      [32m+[0m[0m website_endpoint            = (known after apply)
+
+      [32m+[0m[0m cors_rule (known after apply)
+
+      [32m+[0m[0m grant (known after apply)
+
+      [32m+[0m[0m lifecycle_rule (known after apply)
+
+      [32m+[0m[0m logging (known after apply)
+
+      [32m+[0m[0m object_lock_configuration (known after apply)
+
+      [32m+[0m[0m replication_configuration (known after apply)
+
+      [32m+[0m[0m server_side_encryption_configuration (known after apply)
+
+      [32m+[0m[0m versioning (known after apply)
+
+      [32m+[0m[0m website (known after apply)
+    }
+
+[1m  # aws_s3_bucket.trail[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket" "trail" {
+      [32m+[0m[0m acceleration_status         = (known after apply)
+      [32m+[0m[0m acl                         = (known after apply)
+      [32m+[0m[0m arn                         = (known after apply)
+      [32m+[0m[0m bucket                      = "cgep-lab-cloudtrail-43fcb200"
+      [32m+[0m[0m bucket_domain_name          = (known after apply)
+      [32m+[0m[0m bucket_prefix               = (known after apply)
+      [32m+[0m[0m bucket_regional_domain_name = (known after apply)
+      [32m+[0m[0m force_destroy               = true
+      [32m+[0m[0m hosted_zone_id              = (known after apply)
+      [32m+[0m[0m id                          = (known after apply)
+      [32m+[0m[0m object_lock_enabled         = (known after apply)
+      [32m+[0m[0m policy                      = (known after apply)
+      [32m+[0m[0m region                      = (known after apply)
+      [32m+[0m[0m request_payer               = (known after apply)
+      [32m+[0m[0m tags_all                    = {
+          [32m+[0m[0m "DataClass" = "phi"
+          [32m+[0m[0m "ManagedBy" = "terraform"
+          [32m+[0m[0m "Project"   = "acme-health-intake"
+          [32m+[0m[0m "Workload"  = "patient-intake-api"
+        }
+      [32m+[0m[0m website_domain              = (known after apply)
+      [32m+[0m[0m website_endpoint            = (known after apply)
+
+      [32m+[0m[0m cors_rule (known after apply)
+
+      [32m+[0m[0m grant (known after apply)
+
+      [32m+[0m[0m lifecycle_rule (known after apply)
+
+      [32m+[0m[0m logging (known after apply)
+
+      [32m+[0m[0m object_lock_configuration (known after apply)
+
+      [32m+[0m[0m replication_configuration (known after apply)
+
+      [32m+[0m[0m server_side_encryption_configuration (known after apply)
+
+      [32m+[0m[0m versioning (known after apply)
+
+      [32m+[0m[0m website (known after apply)
+    }
+
+[1m  # aws_s3_bucket.vault[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket" "vault" {
+      [32m+[0m[0m acceleration_status         = (known after apply)
+      [32m+[0m[0m acl                         = (known after apply)
+      [32m+[0m[0m arn                         = (known after apply)
+      [32m+[0m[0m bucket                      = (known after apply)
+      [32m+[0m[0m bucket_domain_name          = (known after apply)
+      [32m+[0m[0m bucket_prefix               = (known after apply)
+      [32m+[0m[0m bucket_regional_domain_name = (known after apply)
+      [32m+[0m[0m force_destroy               = false
+      [32m+[0m[0m hosted_zone_id              = (known after apply)
+      [32m+[0m[0m id                          = (known after apply)
+      [32m+[0m[0m object_lock_enabled         = true
+      [32m+[0m[0m policy                      = (known after apply)
+      [32m+[0m[0m region                      = (known after apply)
+      [32m+[0m[0m request_payer               = (known after apply)
+      [32m+[0m[0m tags_all                    = {
+          [32m+[0m[0m "DataClass" = "phi"
+          [32m+[0m[0m "ManagedBy" = "terraform"
+          [32m+[0m[0m "Project"   = "acme-health-intake"
+          [32m+[0m[0m "Workload"  = "patient-intake-api"
+        }
+      [32m+[0m[0m website_domain              = (known after apply)
+      [32m+[0m[0m website_endpoint            = (known after apply)
+
+      [32m+[0m[0m cors_rule (known after apply)
+
+      [32m+[0m[0m grant (known after apply)
+
+      [32m+[0m[0m lifecycle_rule (known after apply)
+
+      [32m+[0m[0m logging (known after apply)
+
+      [32m+[0m[0m object_lock_configuration (known after apply)
+
+      [32m+[0m[0m replication_configuration (known after apply)
+
+      [32m+[0m[0m server_side_encryption_configuration (known after apply)
+
+      [32m+[0m[0m versioning (known after apply)
+
+      [32m+[0m[0m website (known after apply)
+    }
+
+[1m  # aws_s3_bucket_acl.log[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_acl" "log" {
+      [32m+[0m[0m acl    = "private"
+      [32m+[0m[0m bucket = (known after apply)
+      [32m+[0m[0m id     = (known after apply)
+
+      [32m+[0m[0m access_control_policy (known after apply)
+    }
+
+[1m  # aws_s3_bucket_logging.primary[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_logging" "primary" {
+      [32m+[0m[0m bucket        = (known after apply)
+      [32m+[0m[0m id            = (known after apply)
+      [32m+[0m[0m target_bucket = (known after apply)
+      [32m+[0m[0m target_prefix = "access-logs/"
+    }
+
+[1m  # aws_s3_bucket_object_lock_configuration.vault[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_object_lock_configuration" "vault" {
+      [32m+[0m[0m bucket              = (known after apply)
+      [32m+[0m[0m id                  = (known after apply)
+      [32m+[0m[0m object_lock_enabled = "Enabled"
+
+      [32m+[0m[0m rule {
+          [32m+[0m[0m default_retention {
+              [32m+[0m[0m days = 90
+              [32m+[0m[0m mode = "GOVERNANCE"
+            }
+        }
+    }
+
+[1m  # aws_s3_bucket_ownership_controls.log[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_ownership_controls" "log" {
+      [32m+[0m[0m bucket = (known after apply)
+      [32m+[0m[0m id     = (known after apply)
+
+      [32m+[0m[0m rule {
+          [32m+[0m[0m object_ownership = "BucketOwnerPreferred"
+        }
+    }
+
+[1m  # aws_s3_bucket_policy.trail[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_policy" "trail" {
+      [32m+[0m[0m bucket = (known after apply)
+      [32m+[0m[0m id     = (known after apply)
+      [32m+[0m[0m policy = (known after apply)
+    }
+
+[1m  # aws_s3_bucket_policy.vault[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_policy" "vault" {
+      [32m+[0m[0m bucket = (known after apply)
+      [32m+[0m[0m id     = (known after apply)
+      [32m+[0m[0m policy = (known after apply)
+    }
+
+[1m  # aws_s3_bucket_public_access_block.log[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_public_access_block" "log" {
+      [32m+[0m[0m block_public_acls       = true
+      [32m+[0m[0m block_public_policy     = true
+      [32m+[0m[0m bucket                  = (known after apply)
+      [32m+[0m[0m id                      = (known after apply)
+      [32m+[0m[0m ignore_public_acls      = true
+      [32m+[0m[0m restrict_public_buckets = true
+    }
+
+[1m  # aws_s3_bucket_public_access_block.primary[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_public_access_block" "primary" {
+      [32m+[0m[0m block_public_acls       = true
+      [32m+[0m[0m block_public_policy     = true
+      [32m+[0m[0m bucket                  = (known after apply)
+      [32m+[0m[0m id                      = (known after apply)
+      [32m+[0m[0m ignore_public_acls      = true
+      [32m+[0m[0m restrict_public_buckets = true
+    }
+
+[1m  # aws_s3_bucket_public_access_block.trail[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_public_access_block" "trail" {
+      [32m+[0m[0m block_public_acls       = true
+      [32m+[0m[0m block_public_policy     = true
+      [32m+[0m[0m bucket                  = (known after apply)
+      [32m+[0m[0m id                      = (known after apply)
+      [32m+[0m[0m ignore_public_acls      = true
+      [32m+[0m[0m restrict_public_buckets = true
+    }
+
+[1m  # aws_s3_bucket_public_access_block.vault[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_public_access_block" "vault" {
+      [32m+[0m[0m block_public_acls       = true
+      [32m+[0m[0m block_public_policy     = true
+      [32m+[0m[0m bucket                  = (known after apply)
+      [32m+[0m[0m id                      = (known after apply)
+      [32m+[0m[0m ignore_public_acls      = true
+      [32m+[0m[0m restrict_public_buckets = true
+    }
+
+[1m  # aws_s3_bucket_server_side_encryption_configuration.log[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_server_side_encryption_configuration" "log" {
+      [32m+[0m[0m bucket = (known after apply)
+      [32m+[0m[0m id     = (known after apply)
+
+      [32m+[0m[0m rule {
+          [32m+[0m[0m bucket_key_enabled = true
+
+          [32m+[0m[0m apply_server_side_encryption_by_default {
+              [32m+[0m[0m kms_master_key_id = (known after apply)
+              [32m+[0m[0m sse_algorithm     = "aws:kms"
+            }
+        }
+    }
+
+[1m  # aws_s3_bucket_server_side_encryption_configuration.primary[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_server_side_encryption_configuration" "primary" {
+      [32m+[0m[0m bucket = (known after apply)
+      [32m+[0m[0m id     = (known after apply)
+
+      [32m+[0m[0m rule {
+          [32m+[0m[0m bucket_key_enabled = true
+
+          [32m+[0m[0m apply_server_side_encryption_by_default {
+              [32m+[0m[0m kms_master_key_id = (known after apply)
+              [32m+[0m[0m sse_algorithm     = "aws:kms"
+            }
+        }
+    }
+
+[1m  # aws_s3_bucket_server_side_encryption_configuration.trail[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_server_side_encryption_configuration" "trail" {
+      [32m+[0m[0m bucket = (known after apply)
+      [32m+[0m[0m id     = (known after apply)
+
+      [32m+[0m[0m rule {
+          [32m+[0m[0m apply_server_side_encryption_by_default {
+              [32m+[0m[0m sse_algorithm     = "AES256"
+                [90m# (1 unchanged attribute hidden)[0m[0m
+            }
+        }
+    }
+
+[1m  # aws_s3_bucket_server_side_encryption_configuration.vault[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_server_side_encryption_configuration" "vault" {
+      [32m+[0m[0m bucket = (known after apply)
+      [32m+[0m[0m id     = (known after apply)
+
+      [32m+[0m[0m rule {
+          [32m+[0m[0m apply_server_side_encryption_by_default {
+              [32m+[0m[0m sse_algorithm     = "AES256"
+                [90m# (1 unchanged attribute hidden)[0m[0m
+            }
+        }
+    }
+
+[1m  # aws_s3_bucket_versioning.primary[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_versioning" "primary" {
+      [32m+[0m[0m bucket = (known after apply)
+      [32m+[0m[0m id     = (known after apply)
+
+      [32m+[0m[0m versioning_configuration {
+          [32m+[0m[0m mfa_delete = (known after apply)
+          [32m+[0m[0m status     = "Enabled"
+        }
+    }
+
+[1m  # aws_s3_bucket_versioning.vault[0m will be created
+[0m  [32m+[0m[0m resource "aws_s3_bucket_versioning" "vault" {
+      [32m+[0m[0m bucket = (known after apply)
+      [32m+[0m[0m id     = (known after apply)
+
+      [32m+[0m[0m versioning_configuration {
+          [32m+[0m[0m mfa_delete = (known after apply)
+          [32m+[0m[0m status     = "Enabled"
+        }
+    }
+
+[1m  # aws_securityhub_account.this[0m will be created
+[0m  [32m+[0m[0m resource "aws_securityhub_account" "this" {
+      [32m+[0m[0m arn                       = (known after apply)
+      [32m+[0m[0m auto_enable_controls      = true
+      [32m+[0m[0m control_finding_generator = (known after apply)
+      [32m+[0m[0m enable_default_standards  = true
+      [32m+[0m[0m id                        = (known after apply)
+    }
+
+[1m  # aws_securityhub_standards_subscription.fsbp[0m will be created
+[0m  [32m+[0m[0m resource "aws_securityhub_standards_subscription" "fsbp" {
+      [32m+[0m[0m id            = (known after apply)
+      [32m+[0m[0m standards_arn = "arn:aws:securityhub:us-east-1::standards/aws-foundational-security-best-practices/v/1.0.0"
+    }
+
+[1m  # aws_securityhub_standards_subscription.nist_800_53[0m will be created
+[0m  [32m+[0m[0m resource "aws_securityhub_standards_subscription" "nist_800_53" {
+      [32m+[0m[0m id            = (known after apply)
+      [32m+[0m[0m standards_arn = "arn:aws:securityhub:us-east-1::standards/nist-800-53/v/5.0.0"
+    }
+
+[1m  # random_id.bucket_suffix[0m will be created
+[0m  [32m+[0m[0m resource "random_id" "bucket_suffix" {
+      [32m+[0m[0m b64_std     = (known after apply)
+      [32m+[0m[0m b64_url     = (known after apply)
+      [32m+[0m[0m byte_length = 4
+      [32m+[0m[0m dec         = (known after apply)
+      [32m+[0m[0m hex         = (known after apply)
+      [32m+[0m[0m id          = (known after apply)
+    }
+
+[1m  # random_id.vault_suffix[0m will be created
+[0m  [32m+[0m[0m resource "random_id" "vault_suffix" {
+      [32m+[0m[0m b64_std     = (known after apply)
+      [32m+[0m[0m b64_url     = (known after apply)
+      [32m+[0m[0m byte_length = 4
+      [32m+[0m[0m dec         = (known after apply)
+      [32m+[0m[0m hex         = (known after apply)
+      [32m+[0m[0m id          = (known after apply)
+    }
+
+[1mPlan:[0m [0m31 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  [32m+[0m[0m bucket_arn           = (known after apply)
+  [32m+[0m[0m bucket_name          = (known after apply)
+  [32m+[0m[0m encryption_algorithm = "aws:kms"
+  [32m+[0m[0m log_bucket_arn       = (known after apply)
+  [32m+[0m[0m role_arn             = (known after apply)
+  [32m+[0m[0m vault_name           = (known after apply)
+[90m
+─────────────────────────────────────────────────────────────────────────────[0m
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.
