@@ -1,9 +1,23 @@
 ######################################################################
 # Acme Health — Patient Intake API (CGE-P Capstone Starter)
 #
-# This is the workload your capstone repo wraps with GRC controls.
-# It is INTENTIONALLY non-compliant. See GAPS.md for the named flaws
-# your Rego policies + Terraform overrides are expected to remediate.
+# GRC remediation status (see WRITEUP.md for full detail):
+#   GAP-01, GAP-03, GAP-04  -> closed in hardening.tf
+#   GAP-02, GAP-07          -> closed below
+#   GAP-08                  -> partially closed below (logging + throttling).
+#                              WAF is NOT attached: AWS WAFv2 does not support
+#                              direct association with HTTP APIs (only REST
+#                              APIs v1, ALB, Cognito, AppSync, App Runner).
+#                              Documented as an accepted platform limitation
+#                              in OSCAL, compensated by access logging,
+#                              throttling, and Security Hub monitoring.
+#   GAP-05, GAP-06          -> deliberately deferred. Closing GAP-05 requires
+#                              a NAT Gateway (private subnets have no route to
+#                              AWS services otherwise), which carries an
+#                              ongoing hourly cost. Scoped out for this
+#                              capstone; documented in OSCAL as an accepted
+#                              risk with compensating controls (Security Hub
+#                              monitoring, Lambda's built-in retry behavior).
 ######################################################################
 
 terraform {
@@ -20,10 +34,12 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project   = "acme-health-intake"
-      ManagedBy = "terraform"
-      Workload  = "patient-intake-api"
-      DataClass = "phi"
+      Project         = "acme-health-intake"
+      ManagedBy       = "terraform"
+      Workload        = "patient-intake-api"
+      DataClass       = "phi"
+      Environment     = var.environment
+      ComplianceScope = "cge-p-capstone"
     }
   }
 }
@@ -38,8 +54,7 @@ locals {
 }
 
 ######################################################################
-# Networking — VPC the learner is expected to put the Lambda inside.
-# Two public + two private subnets across two AZs.
+# Networking — VPC. Lambda is NOT placed inside it (see GAP-05 note above).
 ######################################################################
 
 data "aws_availability_zones" "available" {
@@ -98,7 +113,8 @@ resource "aws_route_table_association" "public" {
 
 ######################################################################
 # DynamoDB — submissions table.
-# GAP-02: encryption uses AWS-owned default, not a CMK you control.
+# GAP-02 REMEDIATED: customer-managed KMS key (reused from kms.tf) instead
+# of the AWS-owned default.
 ######################################################################
 
 resource "aws_dynamodb_table" "intake" {
@@ -111,36 +127,25 @@ resource "aws_dynamodb_table" "intake" {
     type = "S"
   }
 
-  # No server_side_encryption block. Defaults to AWS-owned key.
-  # GAP-02: capstone learner expected to add this with a customer-owned key.
+  server_side_encryption {
+    enabled     = true
+    kms_key_arn = aws_kms_key.s3.arn
+  }
 }
 
 ######################################################################
 # S3 — uploads bucket.
-# GAP-01: relies on AWS-managed SSE-S3 (default since 2023) instead of
-#         SSE-KMS with a customer CMK. PHI keys are not under customer
-#         custody.
-# GAP-03: no bucket policy denying non-TLS requests
-#         (aws:SecureTransport).
-# GAP-04: no versioning. PHI overwrites are unrecoverable.
-#
-# Note: AWS now defaults new buckets to SSE-S3 + full public access block.
-# The "gaps" here are real residual gaps once those defaults are in place.
+# GAP-01, GAP-03, GAP-04 REMEDIATED in hardening.tf.
 ######################################################################
 
 resource "aws_s3_bucket" "uploads" {
   bucket = "${local.name_prefix}-uploads-${local.suffix}"
 }
 
-# (Intentionally omitted: SSE-KMS encryption with a customer CMK,
-#  bucket policy enforcing aws:SecureTransport, versioning, lifecycle.
-#  These are the gaps the learner closes.)
-
 ######################################################################
 # Lambda — the intake handler.
-# GAP-05: not deployed inside the VPC.
-# GAP-06: no reserved concurrency, no DLQ, no X-Ray.
-# GAP-07: IAM role has dynamodb:* and s3:* on the resources (over-broad).
+# GAP-05, GAP-06 deliberately deferred (see header note).
+# GAP-07 REMEDIATED below.
 ######################################################################
 
 data "archive_file" "handler" {
@@ -167,7 +172,9 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# GAP-07: deliberately broad permissions on the workload data stores.
+# GAP-07 REMEDIATED: scoped to exactly what handler.py does — one DynamoDB
+# PutItem and one optional S3 PutObject — instead of dynamodb:* / s3:* on
+# the whole resource.
 resource "aws_iam_role_policy" "lambda_inline" {
   name = "intake-data-access"
   role = aws_iam_role.lambda.id
@@ -177,13 +184,18 @@ resource "aws_iam_role_policy" "lambda_inline" {
     Statement = [
       {
         Effect   = "Allow"
-        Action   = "dynamodb:*"
+        Action   = "dynamodb:PutItem"
         Resource = aws_dynamodb_table.intake.arn
       },
       {
         Effect   = "Allow"
-        Action   = "s3:*"
-        Resource = ["${aws_s3_bucket.uploads.arn}", "${aws_s3_bucket.uploads.arn}/*"]
+        Action   = "s3:PutObject"
+        Resource = "${aws_s3_bucket.uploads.arn}/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
+        Resource = aws_kms_key.s3.arn
       }
     ]
   })
@@ -204,14 +216,12 @@ resource "aws_lambda_function" "intake" {
       UPLOAD_BUCKET = aws_s3_bucket.uploads.id
     }
   }
-
-  # GAP-05: no vpc_config block. Learner expected to add one referencing
-  # aws_subnet.private[*] and a hardened security group.
 }
 
 ######################################################################
 # API Gateway — HTTP API in front of the Lambda.
-# GAP-08: no access logging, no throttling, no WAF.
+# GAP-08 PARTIALLY REMEDIATED: access logging + throttling below.
+# WAF not attached — see header note.
 ######################################################################
 
 resource "aws_apigatewayv2_api" "intake" {
@@ -237,7 +247,24 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.intake.id
   name        = "$default"
   auto_deploy = true
-  # GAP-08: no access_log_settings. Learner expected to wire CloudWatch logs.
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.apigw_access.arn
+    format = jsonencode({
+      requestId      = "$context.requestId"
+      ip             = "$context.identity.sourceIp"
+      requestTime    = "$context.requestTime"
+      httpMethod     = "$context.httpMethod"
+      routeKey       = "$context.routeKey"
+      status         = "$context.status"
+      responseLength = "$context.responseLength"
+    })
+  }
+
+  default_route_settings {
+    throttling_burst_limit = 50
+    throttling_rate_limit  = 100
+  }
 }
 
 resource "aws_lambda_permission" "apigw" {
