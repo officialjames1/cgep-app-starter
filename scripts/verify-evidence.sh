@@ -48,7 +48,7 @@ ACTUAL=$($SHASUM "${BUNDLE}" | awk '{print $1}')
 # other GitHub Actions run (even a legitimate one elsewhere) is rejected.
 cosign verify-blob \
   --bundle "${BUNDLE}.sig.bundle" \
-  --certificate-identity-regexp "^https://github.com/officialjames1/cgep-labs/\.github/workflows/grc-gate\.yml@.*$" \
+  --certificate-identity-regexp "^https://github.com/officialjames1/cgep-app-starter/\.github/workflows/grc-gate\.yml@.*$" \
   --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
   "${BUNDLE}"
 
