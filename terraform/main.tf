@@ -27,6 +27,14 @@ terraform {
     random  = { source = "hashicorp/random", version = "~> 3.6" }
     archive = { source = "hashicorp/archive", version = "~> 2.4" }
   }
+
+  backend "s3" {
+    bucket         = "acme-health-tfstate-187478111793"
+    key            = "capstone/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "acme-health-tfstate-lock"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
