@@ -17,15 +17,23 @@ resource "aws_iam_role" "grc_gate" {
       Action    = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringEquals = { "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com" }
-        StringLike   = { "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/${var.github_repo}:*" }
+        StringLike   = { "token.actions.githubusercontent.com:sub" = "repo:officialjames1@108308389/cgep-app-starter@1361942311:*" }
       }
     }]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "readonly" {
+# NOTE: broadened from ReadOnlyAccess to AdministratorAccess so this role can
+# actually run terraform apply (KMS, S3, DynamoDB, Lambda, IAM, CloudTrail,
+# Security Hub, API Gateway, VPC) plus read/write the remote state backend
+# (S3 state bucket + DynamoDB lock table). Security here comes from WHO can
+# assume this role — locked to this exact repo via the OIDC trust condition
+# above — not from what the role can do once assumed. A production system
+# would scope this down further (e.g. via IAM Access Analyzer policy
+# generation from real apply activity); deferred here given capstone scope.
+resource "aws_iam_role_policy_attachment" "admin" {
   role       = aws_iam_role.grc_gate.name
-  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
 output "role_arn" { value = aws_iam_role.grc_gate.arn }
