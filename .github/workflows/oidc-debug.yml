@@ -11,7 +11,16 @@ jobs:
   debug:
     runs-on: ubuntu-latest
     steps:
-      - name: Debug OIDC claims
-        uses: github/actions-oidc-debugger@main
-        with:
-          audience: 'sts.amazonaws.com'
+      - name: Fetch and decode OIDC token claims
+        run: |
+          TOKEN=$(curl -sSL -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com" | jq -r '.value')
+
+          PAYLOAD=$(echo "$TOKEN" | cut -d '.' -f2)
+          PAYLOAD="${PAYLOAD//-/+}"
+          PAYLOAD="${PAYLOAD//_/\/}"
+          MOD=$(( ${#PAYLOAD} % 4 ))
+          if [ $MOD -eq 2 ]; then PAYLOAD="${PAYLOAD}=="; fi
+          if [ $MOD -eq 3 ]; then PAYLOAD="${PAYLOAD}="; fi
+
+          echo "$PAYLOAD" | base64 -d | jq '{sub, aud, iss, repository, ref, event_name}'
