@@ -24,3 +24,8 @@ evidence/
 # Secrets / env
 .env
 *.key
+
+# Terraform plan output artifacts (contain resource details, shouldn't be committed)
+terraform/plan.json
+terraform/plan.txt
+terraform/plan-output.txt
