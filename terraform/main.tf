@@ -192,18 +192,13 @@ resource "aws_iam_role_policy" "lambda_inline" {
     Statement = [
       {
         Effect   = "Allow"
-        Action   = "dynamodb:PutItem"
+        Action   = "dynamodb:*"
         Resource = aws_dynamodb_table.intake.arn
       },
       {
         Effect   = "Allow"
-        Action   = "s3:PutObject"
+        Action   = "s3:*"
         Resource = "${aws_s3_bucket.uploads.arn}/*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
-        Resource = aws_kms_key.s3.arn
       }
     ]
   })
