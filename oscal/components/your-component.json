@@ -38,7 +38,7 @@
               {
                 "uuid": "2d5900c6-7d44-4437-87ca-417c2523df5d",
                 "control-id": "SP_800_171_03.13.11",
-                "description": "GAP-01 CLOSED. The uploads bucket is encrypted with SSE-KMS using a customer-managed key (aws_kms_key.s3), reused from the KMS key provisioned for the primary/log buckets rather than a dedicated key. GAP-02 is also closed under this same control: the DynamoDB submissions table specifies server_side_encryption with the same customer-managed key rather than the AWS-owned default.",
+                "description": "GAP-01 CLOSED. The uploads bucket is encrypted with SSE-KMS using a customer-managed key (aws_kms_key.s3), reused from the KMS key provisioned for the primary/log buckets rather than a dedicated key.",
                 "props": [
                   {
                     "name": "implementation-status",
@@ -46,7 +46,29 @@
                   },
                   {
                     "name": "terraform-resource",
-                    "value": "aws_s3_bucket_server_side_encryption_configuration.uploads, aws_dynamodb_table.intake"
+                    "value": "aws_s3_bucket_server_side_encryption_configuration.uploads"
+                  }
+                ],
+                "links": [
+                  {
+                    "rel": "evidence",
+                    "href": "s3://acme-health-grc-evidence-vault-bfeaab80/runs/34635289087/evidence-34635289087-05995e51983ace1cce39d578b54d9bdcc0705a2b.tar.gz",
+                    "text": "Signed pipeline bundle (sha256: c84af4dd3dfd893b353a353614c508ff051e8a5689f62955437ce39d27009390) containing the applied terraform plan for this run."
+                  }
+                ]
+              },
+              {
+                "uuid": "2bd57ecb-a90f-45d7-adee-dcc9a2cc301f",
+                "control-id": "SP_800_171_03.13.11",
+                "description": "GAP-02 CLOSED. The DynamoDB submissions table specifies server_side_encryption using the same customer-managed KMS key (aws_kms_key.s3) as the uploads bucket, rather than the AWS-owned default key.",
+                "props": [
+                  {
+                    "name": "implementation-status",
+                    "value": "implemented"
+                  },
+                  {
+                    "name": "terraform-resource",
+                    "value": "aws_dynamodb_table.intake"
                   }
                 ],
                 "links": [
