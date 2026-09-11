@@ -1,96 +1,177 @@
 {
   "component-definition": {
-    "uuid": "02fde8dd-b356-4176-9342-c2eb4818381a",
+    "uuid": "4b45632f-f570-4f09-b4dd-d016ad217698",
     "metadata": {
-      "title": "compliant-s3 module v1",
-      "last-modified": "2026-04-26T18:00:00.000000+00:00",
+      "title": "Acme Health Patient Intake API \u2014 CGE-P Capstone Component",
+      "last-modified": "2026-09-11T00:00:00.000000+00:00",
       "version": "1.0.0",
       "oscal-version": "1.2.1",
       "parties": [
         {
           "uuid": "0e8daf12-74c7-47a3-bc61-8e6ab637309f",
           "type": "organization",
-          "name": "Your organization"
+          "name": "James Brown / Acme Health Capstone"
         }
       ]
     },
     "components": [
       {
-        "uuid": "838a12b3-a316-4f0b-91d7-a62e48cfd584",
+        "uuid": "2effdcec-c9b7-4e02-af99-f1f2cbadf64e",
         "type": "software",
-        "title": "compliant-s3",
-        "description": "Reusable Terraform pattern for an AWS S3 primary bucket plus a dedicated access-log bucket. Hardcodes server-side encryption, versioning, public access block, access logging, and required compliance tags.",
-        "purpose": "Provide a compliant-by-default S3 primitive that any team can adopt with three lines of consumer Terraform.",
+        "title": "acme-health-intake",
+        "description": "The Acme Health patient intake API: S3 uploads bucket, DynamoDB submissions table, Lambda handler, and API Gateway HTTP API, hardened against the eight named gaps in GAPS.md and governed under a CMMC Level 2 / NIST SP 800-171 Rev 3 control selection.",
+        "purpose": "Accept and store patient intake submissions (PHI) with encryption, access control, and audit controls appropriate for a CMMC Level 2 scope.",
         "responsible-roles": [
-          { "role-id": "provider", "party-uuids": ["0e8daf12-74c7-47a3-bc61-8e6ab637309f"] }
+          {
+            "role-id": "provider",
+            "party-uuids": [
+              "0e8daf12-74c7-47a3-bc61-8e6ab637309f"
+            ]
+          }
         ],
         "control-implementations": [
           {
-            "uuid": "c77c12b2-bb42-4226-be5f-14fc96d1e23e",
-            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
-            "description": "Implementation of NIST 800-53 Rev 5 controls satisfied by this module.",
+            "uuid": "93b99602-899f-4d37-9da4-61be0e45fb3c",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-171/rev3/json/NIST_SP800-171_rev3_catalog.json",
+            "description": "Implementation of NIST SP 800-171 Rev 3 (CMMC Level 2) controls satisfied by this system, mapped to the eight named gaps in GAPS.md.",
             "implemented-requirements": [
               {
-                "uuid": "465aaa9c-7687-4573-b7ac-54480b0e06e5",
-                "control-id": "sc-28",
-                "description": "Server-side encryption is enforced via aws_s3_bucket_server_side_encryption_configuration.primary, using SSE-KMS with a dedicated customer-managed KMS key (aws_kms_key.s3). Hardcoded; consumers cannot override.",
+                "uuid": "2d5900c6-7d44-4437-87ca-417c2523df5d",
+                "control-id": "03.13.11",
+                "description": "GAP-01 CLOSED. The uploads bucket is encrypted with SSE-KMS using a customer-managed key (aws_kms_key.s3), reused from the KMS key provisioned for the primary/log buckets rather than a dedicated key. GAP-02 is also closed under this same control: the DynamoDB submissions table specifies server_side_encryption with the same customer-managed key rather than the AWS-owned default.",
                 "props": [
-                  { "name": "implementation-status", "value": "implemented" },
-                  { "name": "terraform-resource", "value": "aws_s3_bucket_server_side_encryption_configuration.primary" }
+                  {
+                    "name": "implementation-status",
+                    "value": "implemented"
+                  },
+                  {
+                    "name": "terraform-resource",
+                    "value": "aws_s3_bucket_server_side_encryption_configuration.uploads, aws_dynamodb_table.intake"
+                  }
                 ],
                 "links": [
                   {
                     "rel": "evidence",
-                    "href": "s3://cgep-lab-grc-evidence-vault-e53e936e/runs/33811511395/evidence-33811511395-7095d18037b3416df045802ce72e58f1bfccbd08.tar.gz",
-                    "text": "Signed pipeline bundle containing terraform plan.json."
+                    "href": "s3://acme-health-grc-evidence-vault-bfeaab80/runs/34635289087/evidence-34635289087-05995e51983ace1cce39d578b54d9bdcc0705a2b.tar.gz",
+                    "text": "Signed pipeline bundle (sha256: c84af4dd3dfd893b353a353614c508ff051e8a5689f62955437ce39d27009390) containing the applied terraform plan for this run."
                   }
                 ]
               },
               {
-                "uuid": "77c84277-7f19-486d-9471-a8d4269a14f1",
-                "control-id": "ac-3",
-                "description": "Public access to the bucket is blocked at the account/bucket level via aws_s3_bucket_public_access_block. Hardcoded; consumers cannot override.",
+                "uuid": "48f24c01-dfdb-4340-88e3-9d30ec955e8a",
+                "control-id": "03.13.08",
+                "description": "GAP-03 CLOSED. The uploads bucket policy explicitly denies any request where aws:SecureTransport is false, enforcing encryption in transit.",
                 "props": [
-                  { "name": "implementation-status", "value": "implemented" },
-                  { "name": "terraform-resource", "value": "aws_s3_bucket_public_access_block.primary" }
+                  {
+                    "name": "implementation-status",
+                    "value": "implemented"
+                  },
+                  {
+                    "name": "terraform-resource",
+                    "value": "aws_s3_bucket_policy.uploads"
+                  }
                 ],
                 "links": [
                   {
                     "rel": "evidence",
-                    "href": "s3://cgep-lab-grc-evidence-vault-e53e936e/runs/33811511395/evidence-33811511395-7095d18037b3416df045802ce72e58f1bfccbd08.tar.gz",
-                    "text": "Signed pipeline bundle containing terraform plan.json."
+                    "href": "s3://acme-health-grc-evidence-vault-bfeaab80/runs/34635289087/evidence-34635289087-05995e51983ace1cce39d578b54d9bdcc0705a2b.tar.gz",
+                    "text": "Signed pipeline bundle (sha256: c84af4dd3dfd893b353a353614c508ff051e8a5689f62955437ce39d27009390) containing the applied terraform plan for this run."
                   }
                 ]
               },
               {
-                "uuid": "f6f7bf2e-9a82-46e2-8ea7-2f248267ad9f",
-                "control-id": "au-3",
-                "description": "Access logging is enforced via aws_s3_bucket_logging, writing to a dedicated access-log bucket so every request against the primary bucket is recorded.",
+                "uuid": "0197a865-d266-45d3-acd5-fe7954759eb4",
+                "control-id": "03.08.09",
+                "description": "GAP-04 CLOSED. The uploads bucket has versioning enabled, so PHI overwrites or deletes are recoverable.",
                 "props": [
-                  { "name": "implementation-status", "value": "implemented" },
-                  { "name": "terraform-resource", "value": "aws_s3_bucket_logging.primary" }
+                  {
+                    "name": "implementation-status",
+                    "value": "implemented"
+                  },
+                  {
+                    "name": "terraform-resource",
+                    "value": "aws_s3_bucket_versioning.uploads"
+                  }
                 ],
                 "links": [
                   {
                     "rel": "evidence",
-                    "href": "s3://cgep-lab-grc-evidence-vault-e53e936e/runs/33811511395/evidence-33811511395-7095d18037b3416df045802ce72e58f1bfccbd08.tar.gz",
-                    "text": "Signed pipeline bundle containing terraform plan.json."
+                    "href": "s3://acme-health-grc-evidence-vault-bfeaab80/runs/34635289087/evidence-34635289087-05995e51983ace1cce39d578b54d9bdcc0705a2b.tar.gz",
+                    "text": "Signed pipeline bundle (sha256: c84af4dd3dfd893b353a353614c508ff051e8a5689f62955437ce39d27009390) containing the applied terraform plan for this run."
                   }
                 ]
               },
               {
-                "uuid": "ee4cb1f3-6631-49b7-82e3-82a8bda35e19",
-                "control-id": "cm-6",
-                "description": "Bucket versioning is enforced via aws_s3_bucket_versioning, locking in a baseline configuration setting that consumers cannot disable.",
+                "uuid": "182dba7a-c6a3-4598-9085-8b7003b9801a",
+                "control-id": "03.01.05",
+                "description": "GAP-07 CLOSED. The Lambda's inline IAM policy is scoped to exactly the actions the handler performs (dynamodb:PutItem, s3:PutObject, plus kms:Decrypt/kms:GenerateDataKey required once DynamoDB's encryption moved to a customer-managed key), replacing the original dynamodb:* / s3:* wildcard grants.",
                 "props": [
-                  { "name": "implementation-status", "value": "implemented" },
-                  { "name": "terraform-resource", "value": "aws_s3_bucket_versioning.primary" }
+                  {
+                    "name": "implementation-status",
+                    "value": "implemented"
+                  },
+                  {
+                    "name": "terraform-resource",
+                    "value": "aws_iam_role_policy.lambda_inline"
+                  }
                 ],
                 "links": [
                   {
                     "rel": "evidence",
-                    "href": "s3://cgep-lab-grc-evidence-vault-e53e936e/runs/33811511395/evidence-33811511395-7095d18037b3416df045802ce72e58f1bfccbd08.tar.gz",
-                    "text": "Signed pipeline bundle containing terraform plan.json."
+                    "href": "s3://acme-health-grc-evidence-vault-bfeaab80/runs/34635289087/evidence-34635289087-05995e51983ace1cce39d578b54d9bdcc0705a2b.tar.gz",
+                    "text": "Signed pipeline bundle (sha256: c84af4dd3dfd893b353a353614c508ff051e8a5689f62955437ce39d27009390) containing the applied terraform plan for this run."
+                  }
+                ]
+              },
+              {
+                "uuid": "33eb5769-ddc6-4ff8-98d0-a6da17eb284c",
+                "control-id": "03.03.01",
+                "description": "GAP-08 PARTIALLY CLOSED. The API Gateway default stage has access_log_settings (CloudWatch) and default_route_settings (throttling) configured. The WAF portion of this control is NOT implemented: AWS WAFv2 does not support direct association with HTTP APIs (aws_apigatewayv2_*) \u2014 only REST APIs (v1), ALB, Cognito, AppSync, and App Runner. Migrating to a REST API or fronting the HTTP API with CloudFront would be required to close this fully, both out of scope for this capstone. Compensating controls: API Gateway's own throttling limits, CloudWatch access logging, and AWS Security Hub (FSBP + NIST 800-53 standards) monitoring the account.",
+                "props": [
+                  {
+                    "name": "implementation-status",
+                    "value": "partial"
+                  },
+                  {
+                    "name": "terraform-resource",
+                    "value": "aws_apigatewayv2_stage.default, aws_cloudwatch_log_group.apigw_access"
+                  }
+                ],
+                "links": [
+                  {
+                    "rel": "evidence",
+                    "href": "s3://acme-health-grc-evidence-vault-bfeaab80/runs/34635289087/evidence-34635289087-05995e51983ace1cce39d578b54d9bdcc0705a2b.tar.gz",
+                    "text": "Signed pipeline bundle (sha256: c84af4dd3dfd893b353a353614c508ff051e8a5689f62955437ce39d27009390) containing the applied terraform plan for this run."
+                  }
+                ]
+              },
+              {
+                "uuid": "e6933fb0-15be-456d-815e-2ca8fff4e0d0",
+                "control-id": "03.13.01",
+                "description": "GAP-05 NOT IMPLEMENTED \u2014 accepted risk. The intake Lambda is not deployed inside the starter's VPC. Closing this gap requires a NAT Gateway so the private subnets (which currently have no route to AWS services) can reach DynamoDB, S3, CloudWatch Logs, and SQS from within the VPC. A NAT Gateway carries a real ongoing hourly cost, which was deemed out of scope for this capstone's timeline and budget. Compensating controls: the Lambda's IAM role is already scoped to least privilege (see 03.01.05 above), and AWS Security Hub continuously monitors the account for related findings. Detection policy (compliance.gap05_aws) is written and unit-tested but intentionally excluded from the CI enforcement gate, since enforcing an unimplemented control would permanently block merges.",
+                "props": [
+                  {
+                    "name": "implementation-status",
+                    "value": "not-implemented"
+                  },
+                  {
+                    "name": "terraform-resource",
+                    "value": "aws_lambda_function.intake"
+                  }
+                ]
+              },
+              {
+                "uuid": "0bc69e6f-2ead-4f4b-a250-8439628986fa",
+                "control-id": "03.14.06",
+                "description": "GAP-06 NOT IMPLEMENTED \u2014 accepted risk. The intake Lambda has no reserved concurrency, dead-letter queue, or active X-Ray tracing. This was deferred for the same reason as 03.13.01 (GAP-05): a DLQ and CloudWatch logging both depend on the same VPC network path a NAT Gateway would provide, so this was scoped out alongside GAP-05. Compensating controls: Lambda's built-in retry behavior on invocation errors, and Security Hub monitoring. Detection policy (compliance.gap06_aws) is written and unit-tested but intentionally excluded from the CI enforcement gate.",
+                "props": [
+                  {
+                    "name": "implementation-status",
+                    "value": "not-implemented"
+                  },
+                  {
+                    "name": "terraform-resource",
+                    "value": "aws_lambda_function.intake"
                   }
                 ]
               }
